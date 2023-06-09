@@ -1,126 +1,124 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
-from Diagnosing_eye import Diagnosing_eye_page
 from member.service import MemberService
-from Signup import signup_page
-from Login_Logout import login_page
-from logout import logout_page
-from Mypage import Mypage_page
-import AI_Chatbot
-from Write_life import Daylist_page
-from Diagnosing_album import Diagnosing_album_page
-import About
-from guide_Hospital import Hospital_page
+from member.dao_db import MemberDao
 from pet.petsv import PetService
+from pet.pet_db import PetDao
+import sqlite3
+class Mypage_page:
 
-class Home:
     def __init__(self):
-        self.signup=signup_page()
-        self.login=login_page()
-        self.logout=logout_page()
         self.service=MemberService()
-        self.Mypage = Mypage_page()
-        self.Daylist=Daylist_page()
-        self.album=Diagnosing_album_page()
-        self.eye=Diagnosing_eye_page()
-        self.hospital=Hospital_page()
         self.petsv=PetService()
     def run(self):
-        st.set_page_config(
-            page_title='냥이의 하루, 안냥 ',
-            page_icon=':cat:',
-            layout='wide',  # wide,centered
-            menu_items={
-                'Get Help': 'https://lc.multicampus.com/k-digital/#/login',  # 페이지로 이동하기
-                'About': '### 대박징조의 *반려묘의 안구질환 진단 및 하루 기록 서비스* 입니다.'
-            },
-            initial_sidebar_state='expanded'
-        )
-        # 사이드바
-        if self.service.login_user(print=False) == '':
-            login_logout = 'login'
-        else:
-            login_logout = 'logout'
-        menu = ["Home", "Signup",  "Mypage",login_logout]
-        with st.sidebar:
-            choose = option_menu(MemberService.loginId, menu,
-                                 icons=['house', 'bi-clipboard-check', 'gear','person lines fill' ],
-                                  default_index=0,
-                                 # styles={
-                                 #     "container": {"padding": "5!important", "background-color": "#fafafa"},
-                                 #     "icon": {"color": "orange", "font-size": "25px"},
-                                 #     "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px",
-                                 #                  "--hover-color": "#eee"},
-                                 #     "nav-link-selected": {"background-color": "#02ab21"},
-                                 # }
-                                 )
-
-        # 화면
-        def bar():
-            col, col1, col2,col3 = st.columns([2, 3, 1,1])
-            with col1:
-                st.title('냥이의 하루, 안냥:cat:')
-            with col2:
-                # if self.service.login_user(print=False) == '':
-                #     login_logout = 'login'
-                # else:
-                #     login_logout = 'logout'
-                st.write('#')
-                self.service.login_user()
-            with col3:
-                self.petsv.printMyCat(print1=False)
-
+        col4, col5, col6 = st.columns([1, 2, 1])
+        with col5:
+            st.title('냥이의 하루, 안냥:cat:')
+        with col6:
             st.write('#')
+            self.service.login_user(print2=False)
+        col1, col2, col3 = st.columns([1, 3, 1])
+        with col2:
+            tab1, tab2, tab3 = st.tabs(['회원정보', '반려묘등록', '반려묘정보'])
+            with tab1:
 
-            nav = ["About", "Diagnosing eye", "Medical charts", "AI Chatbot", "Write life", "Hospital"]
-            select = option_menu(None, nav,
-                                 icons=['house', 'camera fill', 'bi-folder2-open', 'bi-chat-dots', 'book', 'hospital'],
-                                 default_index=0,
-                                 styles={
-                                     "container": {"padding": "5!important", "background-color": "#fafafa"},
-                                     "icon": {"color": "orange", "font-size": "25px"},
-                                     "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px",
-                                                  "--hover-color": "#eee"},
-                                     "nav-link-selected": {"background-color": "#02ab21"}
-                                 }, orientation="horizontal"
-                                 )
+                st.subheader('회원 정보')
+                if MemberService.loginId == '':
+                    st.error('로그인하고 이용하세요')
+                    return
+                else:
+                    con = sqlite3.connect('mydb.db')
+                    cur = con.cursor()
+                    cur.execute(f'select * from User where User_Id="{MemberService.loginId}"')
+                    user_info = cur.fetchone()
+                    st.text_input(label="아이디", value=user_info[0], max_chars=15, disabled=True, key=1)
+                    st.text_input(label="비밀번호", value=user_info[1], max_chars=20, disabled=True, key=2)
+                    input_name = st.text_input(label='닉네임',  value=user_info[2], max_chars=45, key=3)
+                    input_email = st.text_input(label='이메일',  value=user_info[3], max_chars=100, key=4)
+                    input_phone = st.text_input(label='전화번호',  value=user_info[4], max_chars=20, key=5)
+                    modifybtn = st.button('수정')
+                    if modifybtn:
+                        con = sqlite3.connect('mydb.db')
+                        cur = con.cursor()
+                        sql = 'update User set User_Name=?, User_Email=?, User_Phone=? where User_Id=?'
+                        d = (input_name,input_email,input_phone,MemberService.loginId)
+                        cur.execute(sql,d)
+                        con.commit()
+                        cur.close()
+                        con.close()
+                        return st.success('수정 완료되었습니다.', icon="✅")
+                    st.subheader('회원 탈퇴')
+                    delbtn=st.button("탈퇴")
 
-
-            if select == nav[0]:
-                About.About_page()
-            if select == nav[1]:
-                self.eye.diagnosing_eye_page()
-            if select == nav[2]:
-                self.album.run()
-            if select == nav[3]:
-                AI_Chatbot.AI_Chatbot_page()
-            if select == nav[4]:
-                self.Daylist.run()
-            if select == nav[5]:
-                self.hospital.run()
-
-        # self.service.login_user()
-        # st.markdown("---")
-
-
-        def main():
-            if choose == menu[0]:
-                # About.About_page()
-                bar()
-            if choose == menu[1]:
-                self.signup.run()
-            if choose == menu[3]:
-                self.login.run()
-            if choose == menu[2]:
-                self.Mypage.run()
-
-        main()
+                    if delbtn:
+                        self.service.delMember(MemberService.loginId)
 
 
 
+            with tab2:
+                st.subheader('반려묘 등록')
+                st.info('다음 양식을 모두 입력 후 제출합니다.')
+                input_Name = st.text_input('반려묘이름', max_chars=45)
+                input_Age = st.number_input('반려묘나이', value=1, min_value=1, step=1)
+                input_Num = st.text_input('반려묘등록번호', max_chars=20)
+                input_Kind = st.text_input('반려묘종', max_chars=20)
+                input_Gender = st.text_input('반려묘성별', max_chars=5)
+                state= st.radio(
+                    "고양이의 현재 상태를 선택해주세요",
+                    ('집중 치료중/병원 입원중', '저체중/비만', '과체중 경향/활동적은','중성화를 했으며, 보통활동량','중성화를 하지 않았으며, 보통활동량','임신중','수유중','새끼 고양이'))
+                if state=='집중 치료중/병원 입원중':
+                    input_State=0
+                elif state=='저체중/비만':
+                    input_State=1
+                elif state=='과체중 경향/활동적은':
+                    input_State=2
+                elif state=='중성화를 했으며, 보통활동량':
+                    input_State=3
+                elif state=='중성화를 하지 않았으며, 보통활동량':
+                    input_State=4
+                elif state=='임신중':
+                    input_State=5
+                elif state=='수유중':
+                    input_State=6
+                elif state=='새끼 고양이':
+                    input_State=7
+                input_Eatkacl = st.number_input('먹이는 사료칼로리(kcal/kg)', value=1, min_value=1, step=1)
+                submitted = st.button('반려묘 등록하기')
+                if submitted:
+                    if MemberService.loginId == '':
+                        st.write('로그인하고 이용하세요')
+                    else:
+                        self.petsv.addCat(MemberService.loginId, input_Name, input_Age, input_Num, input_Kind, input_Gender,input_State,input_Eatkacl)
+                        st.success(f'{input_Name} 등록되었습니다', icon="✅")
+
+            with tab3:
+                if MemberService.loginId == '':
+                    st.write('로그인 먼저 하세요')
+                    return
+                else:
+                    st.subheader('반려묘 정보')
+                    mycat=self.petsv.printMyCat()
+                    if mycat:
+                        cat_info = self.petsv.printCatInfo(MemberService.loginId, mycat)
+                        st.text_input(label="아이디", value=cat_info[0], max_chars=15, disabled=True)
+                        st.text_input(label="반려묘등록번호", value=cat_info[3], max_chars=15, disabled=True)
+                        input_catname = st.text_input(label="반려묘이름", value=cat_info[1], max_chars=45, key=6)
+                        input_catage = st.number_input(label="반려묘나이", value=cat_info[2], min_value=1, step=1, key=7)
+                        input_catkind = st.text_input(label="반려묘종", value=cat_info[4], max_chars=20, key=8)
+                        input_catgender = st.text_input(label="반려묘성별", value=cat_info[5], max_chars=5, key=9)
+                        input_catstate=st.radio(label='',options=('집중 치료중/병원 입원중', '저체중/비만', '과체중 경향/활동적은','중성화를 했으며, 보통활동량','중성화를 하지 않았으며, 보통활동량','임신중','수유중','새끼 고양이'),
+                                                label_visibility='collapsed',index=int(cat_info[6]))
+                        input_cateatkcal = st.number_input(label="먹이는 사료칼로리(kcal/kg)", value=cat_info[7], min_value=1, step=1, key=10)
+                        editted = st.button('수정하기')
+                        if editted:
+                            self.petsv.UpdateCat(MemberService.loginId, cat_info[3], input_catage, input_catname, input_catkind, input_catgender,input_catstate,input_cateatkcal)
+                        st.subheader('반려묘 삭제')
+                        if st.button('삭제하기'):
+                            self.petsv.delete_Cat(MemberService.loginId, mycat)
+                    else:
+                        st.error('반려묘 등록하세요')
 
 
 
-if __name__== '__main__':
-    m=Home()
+if __name__ == '__main__':
+    m = Mypage_page()
     m.run()

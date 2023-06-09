@@ -1,126 +1,51 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
-from Diagnosing_eye import Diagnosing_eye_page
 from member.service import MemberService
-from Signup import signup_page
-from Login_Logout import login_page
-from logout import logout_page
-from Mypage import Mypage_page
-import AI_Chatbot
-from Write_life import Daylist_page
-from Diagnosing_album import Diagnosing_album_page
-import About
-from guide_Hospital import Hospital_page
-from pet.petsv import PetService
 
-class Home:
+
+class signup_page:
     def __init__(self):
-        self.signup=signup_page()
-        self.login=login_page()
-        self.logout=logout_page()
-        self.service=MemberService()
-        self.Mypage = Mypage_page()
-        self.Daylist=Daylist_page()
-        self.album=Diagnosing_album_page()
-        self.eye=Diagnosing_eye_page()
-        self.hospital=Hospital_page()
-        self.petsv=PetService()
+        self.servise=MemberService()
+
     def run(self):
-        st.set_page_config(
-            page_title='냥이의 하루, 안냥 ',
-            page_icon=':cat:',
-            layout='wide',  # wide,centered
-            menu_items={
-                'Get Help': 'https://lc.multicampus.com/k-digital/#/login',  # 페이지로 이동하기
-                'About': '### 대박징조의 *반려묘의 안구질환 진단 및 하루 기록 서비스* 입니다.'
-            },
-            initial_sidebar_state='expanded'
-        )
-        # 사이드바
-        if self.service.login_user(print=False) == '':
-            login_logout = 'login'
-        else:
-            login_logout = 'logout'
-        menu = ["Home", "Signup",  "Mypage",login_logout]
-        with st.sidebar:
-            choose = option_menu(MemberService.loginId, menu,
-                                 icons=['house', 'bi-clipboard-check', 'gear','person lines fill' ],
-                                  default_index=0,
-                                 # styles={
-                                 #     "container": {"padding": "5!important", "background-color": "#fafafa"},
-                                 #     "icon": {"color": "orange", "font-size": "25px"},
-                                 #     "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px",
-                                 #                  "--hover-color": "#eee"},
-                                 #     "nav-link-selected": {"background-color": "#02ab21"},
-                                 # }
-                                 )
+        global check1
+        col1,col2,col3=st.columns([2,1,2])
+        col2.subheader('회원가입 📝')
 
-        # 화면
-        def bar():
-            col, col1, col2,col3 = st.columns([2, 3, 1,1])
-            with col1:
-                st.title('냥이의 하루, 안냥:cat:')
-            with col2:
-                # if self.service.login_user(print=False) == '':
-                #     login_logout = 'login'
-                # else:
-                #     login_logout = 'logout'
-                st.write('#')
-                self.service.login_user()
-            with col3:
-                self.petsv.printMyCat(print1=False)
+        col4, col5, col6 = st.columns([1, 2, 1])
+        col5.info('다음 양식을 모두 입력 후 제출합니다.')
+        input_id = col5.text_input('아이디', max_chars=15)
+        input_pwd = col5.text_input('비밀번호', type='password')
+        input_pwd2 = col5.text_input('비밀번호 확인', type='password')
+        checkbtn = col5.button('확인')
+        if checkbtn:
+            if input_pwd != input_pwd2:
+                col5.error('비밀번호가 다릅니다. 다시 입력해주세요', icon="🚨")
+                check1 = 0
+            elif input_pwd=='':
+                col5.error('비밀번호를 입력하세요', icon="🚨")
+                check1=0
+            else:
+                col5.success('확인되었습니다.', icon="✅")
+                check1=1
+        input_name = col5.text_input('닉네임', max_chars=45)
+        input_email = col5.text_input('이메일', max_chars=100)
+        input_phone = col5.text_input('전화번호', max_chars=20)
 
-            st.write('#')
-
-            nav = ["About", "Diagnosing eye", "Medical charts", "AI Chatbot", "Write life", "Hospital"]
-            select = option_menu(None, nav,
-                                 icons=['house', 'camera fill', 'bi-folder2-open', 'bi-chat-dots', 'book', 'hospital'],
-                                 default_index=0,
-                                 styles={
-                                     "container": {"padding": "5!important", "background-color": "#fafafa"},
-                                     "icon": {"color": "orange", "font-size": "25px"},
-                                     "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px",
-                                                  "--hover-color": "#eee"},
-                                     "nav-link-selected": {"background-color": "#02ab21"}
-                                 }, orientation="horizontal"
-                                 )
-
-
-            if select == nav[0]:
-                About.About_page()
-            if select == nav[1]:
-                self.eye.diagnosing_eye_page()
-            if select == nav[2]:
-                self.album.run()
-            if select == nav[3]:
-                AI_Chatbot.AI_Chatbot_page()
-            if select == nav[4]:
-                self.Daylist.run()
-            if select == nav[5]:
-                self.hospital.run()
-
-        # self.service.login_user()
-        # st.markdown("---")
-
-
-        def main():
-            if choose == menu[0]:
-                # About.About_page()
-                bar()
-            if choose == menu[1]:
-                self.signup.run()
-            if choose == menu[3]:
-                self.login.run()
-            if choose == menu[2]:
-                self.Mypage.run()
-
-        main()
-
-
-
-
-
-
-if __name__== '__main__':
-    m=Home()
+        submitted=col5.button('회원가입하기')
+        if submitted:
+            if check1==1:
+                self.servise.addMember(input_id,input_pwd,input_name,input_email,input_phone)
+                col5.success(f'{input_id}님,환영합니다! 로그인해주세요.', icon="✅")
+            elif check1==0:
+                col5.error('비밀번호 확인버튼을 클릭해주세요', icon="🚨")
+            else:
+                col5.write('error')
+if __name__=='__main__':
+    m=signup_page()
     m.run()
+
+
+
+
+
+
